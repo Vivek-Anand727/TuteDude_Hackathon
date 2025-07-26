@@ -2,10 +2,10 @@ const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
 
-// Register user after Firebase Auth success
+// Register user
 router.post('/register', authController.register);
 
-// Login with Firebase ID Token
+// Login user
 router.post('/login', authController.login);
 
 module.exports = router;

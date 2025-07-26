@@ -1,60 +1,86 @@
-const admin = require('../firebase');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// Register new user (after Firebase registration is done on frontend)
-exports.register = async (req, res) => {
-  const { name, email, role, phone, location, firebaseUid } = req.body;
+// Generate JWT token
+const generateToken = (userId) => {
+  return jwt.sign({ userId }, process.env.JWT_SECRET || 'your-secret-key', {
+    expiresIn: '7d',
+  });
+};
 
-  if (!firebaseUid || !email || !name || !role || !location) {
+// Register new user
+exports.register = async (req, res) => {
+  const { name, email, role, phone, location, password } = req.body;
+
+  if (!email || !name || !role || !location || !password) {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
   try {
-    // Check if user already exists in DB
     let existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(409).json({ message: 'User already exists' });
     }
 
-    // Create new user in MongoDB
+    const hashedPassword = await bcrypt.hash(password, 12);
+
     const user = new User({
       name,
       email,
       role,
       phone,
       location,
+      password: hashedPassword,
     });
 
     await user.save();
-    res.status(201).json({ message: 'User registered successfully', user });
+
+    const token = generateToken(user._id);
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.status(201).json({
+      message: 'User registered successfully',
+      user: userResponse,
+      token,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 };
 
-// Login: verify Firebase token & return user profile
+// Login user
 exports.login = async (req, res) => {
-  const { idToken } = req.body;
+  const { email, password } = req.body;
 
-  if (!idToken) {
-    return res.status(400).json({ error: 'Token required' });
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password required' });
   }
 
   try {
-    // Verify token
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    const email = decodedToken.email;
-
-    // Find user in MongoDB
     let user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ message: 'User not found. Please register.' });
     }
 
-    res.status(200).json({ message: 'Login successful', user });
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const token = generateToken(user._id);
+    const userResponse = user.toObject();
+    delete userResponse.password;
+
+    res.status(200).json({
+      message: 'Login successful',
+      user: userResponse,
+      token,
+    });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(401).json({ error: 'Invalid or expired token' });
+    res.status(500).json({ error: 'Server error' });
   }
 };
