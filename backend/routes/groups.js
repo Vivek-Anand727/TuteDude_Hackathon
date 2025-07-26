@@ -1,24 +1,21 @@
 const express = require('express');
 const router = express.Router();
+const groupController = require('../controllers/groupController');
+const authMiddleware = require('../middleware/auth'); // Firebase auth token verifier
 
-// Create a new group
-router.post('/create', (req, res) => {
-  // controller: groupController.createGroup
-});
+// All routes are protected
+router.use(authMiddleware);
 
-// Add user to group
-router.post('/add-user/:groupId', (req, res) => {
-  // controller: groupController.addUserToGroup
-});
+// ✅ Create a new group
+router.post('/create', groupController.createGroup);
 
-// Assign a group leader
-router.patch('/assign-leader/:groupId', (req, res) => {
-  // controller: groupController.assignLeader
-});
+// ✅ Add a user to the group
+router.post('/add-user/:groupId', groupController.addUserToGroup);
 
-// Get all groups of a user
-router.get('/my-groups', (req, res) => {
-  // controller: groupController.getMyGroups
-});
+// ✅ Assign a new group leader
+router.patch('/assign-leader/:groupId', groupController.assignLeader);
+
+// ✅ Get all groups the current user is part of
+router.get('/my-groups', groupController.getMyGroups);
 
 module.exports = router;
