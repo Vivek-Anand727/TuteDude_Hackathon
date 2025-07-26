@@ -1,28 +1,31 @@
 const Offer = require('../models/Offer');
-const Request = require('../models/Request');
 
-// Create a new offer (by seller)
+// Create a new offer (by supplier)
 exports.createOffer = async (req, res) => {
   try {
-    const { requestId, price, message, deliveryTime, minOrderQty } = req.body;
+    const { requestId, offeredPrice, eta, notes } = req.body;
+
+    if (!requestId || !offeredPrice || !eta) {
+      return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
 
     const offer = new Offer({
-      requestId,
-      seller: req.user._id,
-      price,
-      message,
-      deliveryTime,
-      minOrderQty,
+      request: requestId,
+      supplier: req.user._id, // assuming req.user is injected by auth middleware
+      offeredPrice,
+      eta,
+      notes,
     });
 
     await offer.save();
     res.status(201).json({ success: true, offer });
   } catch (error) {
+    console.error('Error creating offer:', error);
     res.status(500).json({ success: false, message: 'Error creating offer', error });
   }
 };
 
-// Accept an offer (by buyer or group leader)
+// Accept an offer
 exports.acceptOffer = async (req, res) => {
   try {
     const { offerId } = req.params;
@@ -37,47 +40,48 @@ exports.acceptOffer = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Offer accepted', offer });
   } catch (error) {
+    console.error('Error accepting offer:', error);
     res.status(500).json({ success: false, message: 'Error accepting offer', error });
   }
 };
 
-// Counter offer (negotiation from either side)
+// Counter offer (from either buyer or supplier)
 exports.counterOffer = async (req, res) => {
   try {
     const { offerId } = req.params;
-    const { price, message, deliveryTime } = req.body;
+    const { offeredPrice, eta, notes } = req.body;
 
     const offer = await Offer.findById(offerId);
     if (!offer) {
       return res.status(404).json({ success: false, message: 'Offer not found' });
     }
 
-    // Only buyer or seller involved can counter
-    if (!offer.seller.equals(req.user._id) && !offer.buyer?.equals(req.user._id)) {
-      return res.status(403).json({ success: false, message: 'Unauthorized to negotiate' });
+    if (!offer.supplier.equals(req.user._id)) {
+      return res.status(403).json({ success: false, message: 'Unauthorized to counter this offer' });
     }
 
-    offer.price = price || offer.price;
-    offer.message = message || offer.message;
-    offer.deliveryTime = deliveryTime || offer.deliveryTime;
+    offer.offeredPrice = offeredPrice || offer.offeredPrice;
+    offer.eta = eta || offer.eta;
+    offer.notes = notes || offer.notes;
     offer.status = 'pending';
 
     await offer.save();
-
     res.status(200).json({ success: true, message: 'Counter offer sent', offer });
   } catch (error) {
+    console.error('Error countering offer:', error);
     res.status(500).json({ success: false, message: 'Error sending counter offer', error });
   }
 };
 
-// Get all offers for a request
+// Get all offers for a specific request
 exports.getOffersForRequest = async (req, res) => {
   try {
     const { requestId } = req.params;
-    const offers = await Offer.find({ requestId }).populate('seller', 'name email');
 
+    const offers = await Offer.find({ request: requestId }).populate('supplier', 'name email');
     res.status(200).json({ success: true, offers });
   } catch (error) {
+    console.error('Error fetching offers:', error);
     res.status(500).json({ success: false, message: 'Error fetching offers', error });
   }
 };
