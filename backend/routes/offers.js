@@ -37,7 +37,7 @@ router.post('/:offerId/respond-counter', checkRole('supplier'), offerController.
 // ====== GROUP OFFERS MANAGEMENT ======
 
 // Create group offer (suppliers only)
-router.post('/group/create', checkRole('supplier'), require('../controllers/groupOfferController').createGroupOffer);
+router.post('/group/create', checkRole('+'), require('../controllers/groupOfferController').createGroupOffer);
 
 // Get all offers for a group request (for group leaders)
 router.get('/group/request/:groupRequestId', checkRole('vendor'), require('../controllers/groupOfferController').getGroupOffersForRequest);
