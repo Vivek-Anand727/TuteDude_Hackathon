@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema({
   },
   location: {
     type: String,
-    required: true, // e.g., "110024" or "Lajpat Nagar"
+    required: true, 
   },
   createdAt: {
     type: Date,
