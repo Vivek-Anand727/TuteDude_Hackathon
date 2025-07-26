@@ -1,3 +1,4 @@
+// models/Offer.js (Individual offers - minor improvements)
 const mongoose = require('mongoose');
 
 const offerSchema = new mongoose.Schema({
@@ -23,15 +24,44 @@ const offerSchema = new mongoose.Schema({
     type: String,
     default: '',
   },
+  deliveryOptions: {
+    canPickup: {
+      type: Boolean,
+      default: true,
+    },
+    canDeliver: {
+      type: Boolean,
+      default: false,
+    },
+    deliveryCharge: {
+      type: Number,
+      default: 0,
+    }
+  },
   status: {
     type: String,
-    enum: ['pending', 'accepted', 'rejected'],
+    enum: ['pending', 'viewed', 'accepted', 'rejected', 'countered'],
     default: 'pending',
   },
+  viewedByVendor: {
+    type: Boolean,
+    default: false,
+  },
+  viewedAt: Date,
   createdAt: {
     type: Date,
     default: Date.now,
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
   }
+});
+
+// Update the updatedAt field before saving
+offerSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
+  next();
 });
 
 module.exports = mongoose.model('Offer', offerSchema);

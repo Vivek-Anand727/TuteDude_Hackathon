@@ -1,32 +1,38 @@
 {
-  "name": "tutedude_hackathon",
+  "name": "sanchaykart-flex-backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "Backend API for SanchayKart Flex - Group buying and bulk purchasing platform",
   "main": "app.js",
   "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Vivek-Anand727/TuteDude_Hackathon.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
-  "bugs": {
-    "url": "https://github.com/Vivek-Anand727/TuteDude_Hackathon/issues"
-  },
-  "homepage": "https://github.com/Vivek-Anand727/TuteDude_Hackathon#readme",
+  "keywords": [
+    "sanchaykart",
+    "group-buying",
+    "bulk-purchasing",
+    "vendor",
+    "supplier",
+    "marketplace"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
   "dependencies": {
-    "bcrypt": "^6.0.0",
-    "bcryptjs": "^3.0.2",
+    "express": "^4.18.2",
+    "mongoose": "^7.5.0",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.1",
-    "express": "^5.1.0",
-    "firebase": "^12.0.0",
-    "firebase-admin": "^13.4.0",
+    "dotenv": "^16.3.1",
+    "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.16.5"
+    "express-rate-limit": "^6.10.0",
+    "helmet": "^7.0.0",
+    "express-validator": "^7.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   }
 }
