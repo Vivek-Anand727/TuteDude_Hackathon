@@ -72,7 +72,7 @@ exports.deleteRequest = async (req, res) => {
       return res.status(403).json({ error: 'Unauthorized: You can only delete your own requests' });
     }
 
-    await request.remove();
+    await Request.findByIdAndDelete(requestId);
     return res.status(200).json({ message: 'Request deleted successfully' });
   } catch (err) {
     return res.status(500).json({ error: 'Error deleting request', details: err.message });
