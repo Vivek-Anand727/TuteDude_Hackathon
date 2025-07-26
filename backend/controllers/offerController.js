@@ -8,7 +8,7 @@ exports.createOffer = async (req, res) => {
     if (!requestId || !offeredPrice || !eta) {
       return res.status(400).json({ success: false, message: 'Missing required fields' });
     }
-
+    
     const offer = new Offer({
       request: requestId,
       supplier: req.user._id, // assuming req.user is injected by auth middleware
