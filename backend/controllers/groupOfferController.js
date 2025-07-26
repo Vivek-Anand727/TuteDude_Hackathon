@@ -4,14 +4,18 @@ const Request = require('../models/Request');
 // Seller makes a group offer
 exports.createGroupOffer = async (req, res) => {
   try {
-    const { requestId, sellerId, price, quantity, message } = req.body;
+    const { groupId, supplierId, offeredPrice, eta, notes } = req.body;
+
+    if (!groupId || !supplierId || !offeredPrice || !eta) {
+      return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
 
     const newOffer = new GroupOffer({
-      request: requestId,
-      seller: sellerId,
-      price,
-      quantity,
-      message,
+      group: groupId,
+      supplier: supplierId,
+      offeredPrice,
+      eta,
+      notes,
       status: 'pending'
     });
 
@@ -21,6 +25,7 @@ exports.createGroupOffer = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }
 };
+
 
 // Group leader accepts offer
 exports.acceptGroupOffer = async (req, res) => {
@@ -43,14 +48,14 @@ exports.acceptGroupOffer = async (req, res) => {
 exports.counterGroupOffer = async (req, res) => {
   try {
     const offerId = req.params.offerId;
-    const { price, quantity, message } = req.body;
+    const { offeredPrice, eta, notes } = req.body;
 
     const offer = await GroupOffer.findById(offerId);
     if (!offer) return res.status(404).json({ success: false, message: 'Offer not found' });
 
-    offer.price = price || offer.price;
-    offer.quantity = quantity || offer.quantity;
-    offer.message = message || offer.message;
+    offer.offeredPrice = offeredPrice || offer.offeredPrice;
+    offer.eta = eta || offer.eta;
+    offer.notes = notes || offer.notes;
     offer.status = 'countered';
 
     await offer.save();
@@ -59,6 +64,7 @@ exports.counterGroupOffer = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }
 };
+
 
 // Get all offers for a group request
 exports.getGroupOffersForRequest = async (req, res) => {
