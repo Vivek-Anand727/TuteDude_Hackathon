@@ -87,9 +87,33 @@ exports.joinGroup = async (req, res) => {
       joinedAt: new Date()
     });
 
-    // Recalculate total quantity (simple string concatenation for now)
-    // In production, you'd want proper unit handling
-    group.totalQuantity = `${group.members.length * parseInt(quantity.match(/\d+/)[0])}${quantity.match(/[a-zA-Z]+/)[0]}`;
+    // FIXED: Proper quantity summation instead of multiplication
+    const calculateTotalQuantity = (members) => {
+      let totalNumber = 0;
+      let unit = '';
+
+      members.forEach(member => {
+        // Safe regex matching with error handling
+        const quantityMatch = member.quantity.match(/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)$/);
+        if (quantityMatch) {
+          const number = parseFloat(quantityMatch[1]);
+          const memberUnit = quantityMatch[2];
+          
+          if (!unit) {
+            unit = memberUnit; // Set unit from first member
+          }
+          
+          // Only add if units match
+          if (memberUnit.toLowerCase() === unit.toLowerCase()) {
+            totalNumber += number;
+          }
+        }
+      });
+
+      return totalNumber > 0 ? `${totalNumber}${unit}` : quantity; // fallback to original quantity
+    };
+
+    group.totalQuantity = calculateTotalQuantity(group.members);
 
     await group.save();
     await group.populate('members.user', 'name email role');
