@@ -9,8 +9,16 @@ import {
   IndianRupee,
   MapPin,
   Package,
-  Calendar
+  Calendar,
+  User,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import axios from "axios";
+
+const backendURL = import.meta.env.VITE_BACKEND_URL;
 
 interface Request {
   _id: string;
@@ -32,6 +40,124 @@ interface RequestCardProps {
 }
 
 const RequestCard = ({ request }: RequestCardProps) => {
+  const navigate = useNavigate();
+  const [offers, setOffers] = useState([]);
+  const [showOffers, setShowOffers] = useState(false);
+  const [loadingOffers, setLoadingOffers] = useState(false);
+  const [hasLoadedOffers, setHasLoadedOffers] = useState(false);
+  const [actualOffersCount, setActualOffersCount] = useState(request.offersCount || 0);
+
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem("token");
+    return {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    };
+  };
+
+  // Auto-load offer count on component mount
+  const fetchOfferCount = async () => {
+    const requestId = request._id || request.id;
+    
+    try {
+      const res = await axios.get(
+        `${backendURL}/api/offers/request/${requestId}`,
+        getAuthHeaders()
+      );
+      
+      if (res.data.success) {
+        const offersData = res.data.offers || [];
+        setActualOffersCount(offersData.length);
+        // Store offers but don't show them yet
+        setOffers(offersData);
+        setHasLoadedOffers(true);
+      }
+    } catch (error) {
+      console.error('🚨 Fetch offer count error:', error);
+      // If error, keep the original count from request
+      setActualOffersCount(request.offersCount || 0);
+    }
+  };
+
+  // Load full offers and toggle visibility
+  const toggleOffers = async () => {
+    if (hasLoadedOffers) {
+      setShowOffers(!showOffers);
+      return;
+    }
+
+    const requestId = request._id || request.id;
+    console.log('🔍 Fetching offers for request:', requestId);
+    
+    try {
+      setLoadingOffers(true);
+      const res = await axios.get(
+        `${backendURL}/api/offers/request/${requestId}`,
+        getAuthHeaders()
+      );
+      
+      console.log('📡 Offers API Response:', res.data);
+      
+      if (res.data.success) {
+        setOffers(res.data.offers || []);
+        setActualOffersCount((res.data.offers || []).length);
+        setHasLoadedOffers(true);
+        setShowOffers(true);
+      }
+    } catch (error) {
+      console.error('🚨 Fetch offers error:', error);
+    } finally {
+      setLoadingOffers(false);
+    }
+  };
+
+  const handleAcceptOffer = async (offerId) => {
+    try {
+      const res = await axios.post(
+        `${backendURL}/api/offers/${offerId}/accept`,
+        {},
+        getAuthHeaders()
+      );
+      
+      if (res.data.success) {
+        // Refresh offers
+        setHasLoadedOffers(false);
+        setShowOffers(false);
+        fetchOfferCount(); // Reload count and offers
+      }
+    } catch (error) {
+      console.error('Accept offer error:', error);
+    }
+  };
+
+  const handleRejectOffer = async (offerId) => {
+    try {
+      const res = await axios.post(
+        `${backendURL}/api/offers/${offerId}/reject`,
+        {},
+        getAuthHeaders()
+      );
+      
+      if (res.data.success) {
+        // Refresh offers
+        setHasLoadedOffers(false);
+        setShowOffers(false);
+        fetchOfferCount(); // Reload count and offers
+      }
+    } catch (error) {
+      console.error('Reject offer error:', error);
+    }
+  };
+
+  // Auto-load offer count when component mounts (only for open requests)
+  useEffect(() => {
+    if (request.status === "open") {
+      fetchOfferCount();
+    }
+  }, [request._id, request.status]);
+
   const getStatusConfig = (status: string) => {
     switch (status) {
       case "open":
@@ -77,18 +203,9 @@ const RequestCard = ({ request }: RequestCardProps) => {
     });
   };
 
-  const handleViewOffers = () => {
-    // Navigate to offers page - you can implement this based on your routing
-    const requestId = request._id || request.id;
-    console.log("View offers for request:", requestId);
-    // Example: navigate(`/vendor/offers/${requestId}`);
-  };
-
   const handleViewDetails = () => {
-    // Navigate to request details page
     const requestId = request._id || request.id;
     console.log("View details for request:", requestId);
-    // Example: navigate(`/vendor/requests/${requestId}`);
   };
 
   return (
@@ -121,7 +238,6 @@ const RequestCard = ({ request }: RequestCardProps) => {
       </CardHeader>
       
       <CardContent className="pt-0">
-        {/* Description if available */}
         {request.description && (
           <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
             {request.description}
@@ -147,14 +263,12 @@ const RequestCard = ({ request }: RequestCardProps) => {
             </div>
           )}
           
-          {request.status === "open" && request.offersCount !== undefined && (
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Offers Received</p>
-              <p className="text-lg font-semibold text-primary">
-                {request.offersCount}
-              </p>
-            </div>
-          )}
+          <div className="space-y-1">
+            <p className="text-sm text-muted-foreground">Offers Received</p>
+            <p className="text-lg font-semibold text-primary">
+              {actualOffersCount}
+            </p>
+          </div>
 
           {request.urgency && (
             <div className="space-y-1">
@@ -165,6 +279,90 @@ const RequestCard = ({ request }: RequestCardProps) => {
             </div>
           )}
         </div>
+
+        {/* Offers Section */}
+        {request.status === "open" && actualOffersCount > 0 && (
+          <div className="mb-4">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={toggleOffers}
+              disabled={loadingOffers}
+              className="w-full"
+            >
+              {loadingOffers ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+              ) : (
+                <>
+                  <Eye className="w-4 h-4 mr-2" />
+                  {showOffers ? <ChevronUp className="w-4 h-4 ml-2" /> : <ChevronDown className="w-4 h-4 ml-2" />}
+                </>
+              )}
+              {showOffers ? 'Hide Offers' : 'Show Offers'} ({actualOffersCount})
+            </Button>
+
+            {showOffers && (
+              <div className="mt-4 space-y-2">
+                {offers.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No offers received yet
+                  </p>
+                ) : (
+                  offers.map(offer => (
+                    <div key={offer._id} className="border rounded-lg p-3 bg-background/50">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center space-x-2">
+                          <User className="w-4 h-4 text-muted-foreground" />
+                          <span className="font-medium text-sm">{offer.supplier.name}</span>
+                          <Badge variant={offer.status === 'pending' ? 'default' : 
+                                        offer.status === 'accepted' ? 'secondary' : 'destructive'} 
+                                 className="text-xs">
+                            {offer.status}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 text-xs mb-2">
+                        <div>
+                          <span className="text-muted-foreground">Price: </span>
+                          <span className="font-medium">₹{offer.offeredPrice}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">ETA: </span>
+                          <span>{offer.eta}</span>
+                        </div>
+                      </div>
+
+                      {offer.notes && (
+                        <p className="text-xs text-muted-foreground mb-2">{offer.notes}</p>
+                      )}
+
+                      {offer.status === 'pending' && (
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            className="text-xs h-7 px-2"
+                            onClick={() => handleAcceptOffer(offer._id)}
+                          >
+                            Accept
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="text-xs h-7 px-2"
+                            onClick={() => handleRejectOffer(offer._id)}
+                          >
+                            Reject
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+        )}
         
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground flex items-center">
@@ -172,17 +370,9 @@ const RequestCard = ({ request }: RequestCardProps) => {
             Posted {formatDate(request.createdAt)}
           </p>
           
-          <div className="flex space-x-2">
-            {request.status === "open" && request.offersCount && request.offersCount > 0 && (
-              <Button size="sm" variant="outline" onClick={handleViewOffers}>
-                <Eye className="w-4 h-4 mr-2" />
-                View Offers ({request.offersCount})
-              </Button>
-            )}
-            <Button size="sm" variant="ghost" onClick={handleViewDetails}>
-              Details
-            </Button>
-          </div>
+          <Button size="sm" variant="ghost" onClick={handleViewDetails}>
+            Details
+          </Button>
         </div>
       </CardContent>
     </Card>
