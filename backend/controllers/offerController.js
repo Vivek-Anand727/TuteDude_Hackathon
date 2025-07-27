@@ -1,4 +1,3 @@
-
 // controllers/offerController.js (Individual offers - improved)
 const Offer = require('../models/Offer');
 const Request = require('../models/Request');
@@ -305,6 +304,43 @@ exports.getOpenRequests = async (req, res) => {
     res.status(200).json({ success: true, requests });
   } catch (error) {
     console.error('Get open requests error:', error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+
+// Delete/withdraw offer (by supplier - their own offers only) - MISSING FUNCTION
+exports.deleteOffer = async (req, res) => {
+  try {
+    const { offerId } = req.params;
+    const supplierId = req.user._id;
+
+    const offer = await Offer.findById(offerId).populate('request');
+    if (!offer) {
+      return res.status(404).json({ success: false, message: 'Offer not found' });
+    }
+
+    // Check if the supplier owns this offer
+    if (offer.supplier.toString() !== supplierId.toString()) {
+      return res.status(403).json({ success: false, message: 'Only offer owner can delete offers' });
+    }
+
+    // Can only delete offers that are pending or countered
+    if (offer.status === 'accepted') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Cannot delete an accepted offer. Contact the vendor to cancel the deal.' 
+      });
+    }
+
+    // Delete the offer
+    await Offer.findByIdAndDelete(offerId);
+
+    res.status(200).json({ 
+      success: true, 
+      message: 'Offer deleted successfully' 
+    });
+  } catch (error) {
+    console.error('Delete offer error:', error);
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 };

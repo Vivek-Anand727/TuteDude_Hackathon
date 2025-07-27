@@ -447,3 +447,55 @@ exports.getActiveGroupRequests = async (req, res) => {
     });
   }
 };
+
+// Delete group offer (by supplier - their own offers only) - MISSING FUNCTION ADDED
+exports.deleteGroupOffer = async (req, res) => {
+  try {
+    const { offerId } = req.params;
+    const supplierId = req.user._id;
+
+    const offer = await GroupOffer.findById(offerId).populate('groupRequest');
+    if (!offer) {
+      return res.status(404).json({ success: false, message: 'Group offer not found' });
+    }
+
+    // Check if the supplier owns this offer
+    if (offer.supplier.toString() !== supplierId.toString()) {
+      return res.status(403).json({ success: false, message: 'Only offer owner can delete offers' });
+    }
+
+    // Can only delete offers that are pending or countered
+    if (offer.status === 'accepted') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Cannot delete an accepted group offer. Contact the group leader to cancel the deal.' 
+      });
+    }
+
+    if (offer.status === 'completed') {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Cannot delete a completed group offer.' 
+      });
+    }
+
+    // Update group request offers count
+    const groupRequest = await GroupRequest.findById(offer.groupRequest._id);
+    if (groupRequest && groupRequest.offersCount > 0) {
+      groupRequest.offersCount -= 1;
+      await groupRequest.save();
+    }
+
+    // Delete the group offer
+    await GroupOffer.findByIdAndDelete(offerId);
+
+    res.status(200).json({ 
+      success: true, 
+      message: 'Group offer deleted successfully' 
+    });
+  } catch (error) {
+    console.error('Delete group offer error:', error);
+    res.status(500).json({ success: false, message: 'Server error', error: error.message });
+  }
+};
+  

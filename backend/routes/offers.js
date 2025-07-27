@@ -28,16 +28,21 @@ router.post('/:offerId/accept', checkRole('vendor'), offerController.acceptOffer
 // Reject an offer (vendors only) 
 router.post('/:offerId/reject', checkRole('vendor'), offerController.rejectOffer);
 
-    // Counter offer (vendors only)
-    router.post('/:offerId/counter', checkRole('vendor'), offerController.counterOffer);
+// Counter offer (vendors only)
+router.post('/:offerId/counter', checkRole('vendor'), offerController.counterOffer);
 
 // Supplier responds to counter offer
 router.post('/:offerId/respond-counter', checkRole('supplier'), offerController.respondToCounter);
+
+// DELETE ROUTES - NEW
+// Delete/withdraw offer (suppliers only - their own offers)
+router.delete('/:offerId', checkRole('supplier'), offerController.deleteOffer);
 
 // ====== GROUP OFFERS MANAGEMENT ======
 
 // Create group offer (suppliers only)
 router.post('/group/create', checkRole('supplier'), require('../controllers/groupOfferController').createGroupOffer);
+
 // Get all offers for a group request (for group leaders)
 router.get('/group/request/:groupRequestId', checkRole('vendor'), require('../controllers/groupOfferController').getGroupOffersForRequest);
 
@@ -55,5 +60,8 @@ router.post('/group/:offerId/counter', checkRole('vendor'), require('../controll
 
 // Supplier responds to group counter offer  
 router.post('/group/:offerId/respond-counter', checkRole('supplier'), require('../controllers/groupOfferController').respondToCounter);
+
+// Delete group offer (suppliers only - their own offers)
+router.delete('/group/:offerId', checkRole('supplier'), require('../controllers/groupOfferController').deleteGroupOffer);
 
 module.exports = router;
