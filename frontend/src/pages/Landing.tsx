@@ -47,16 +47,118 @@ const Landing = () => {
             <span className="text-xl font-bold text-foreground">SanchayKart Flex</span>
           </div>
           <nav className="hidden md:flex items-center space-x-6">
-            <Link to="/auth" className="text-muted-foreground hover:text-foreground transition-colors">
+            {/* ✅ Fixed: Exact same as your working code */}
+            <Link to="/login" className="text-muted-foreground hover:text-foreground transition-colors">
               Login
             </Link>
+            <Link to="/register">
+              <Button size="sm">Get Started</Button>
+            </Link>
+          </nav>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="py-20 px-4">
+        <div className="container mx-auto text-center">
+          <div className="max-w-3xl mx-auto">
+            <Badge variant="outline" className="mb-6">
+              🚀 Revolutionary Marketplace
+            </Badge>
+            <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-primary bg-clip-text text-transparent">
+              Vendors set their price,
+              <br />
+              Suppliers make offers
+            </h1>
+            <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
+              The first dynamic bidding marketplace for street vendors. Get raw materials at your preferred price through real-time negotiations and group buying.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link to="/register?role=vendor">
+                <Button size="lg" className="w-full sm:w-auto">
+                  I'm a Vendor
+                </Button>
+              </Link>
+              <Link to="/register?role=supplier">
+                <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                  I'm a Supplier
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Grid */}
+      <section className="py-16 px-4">
+        <div className="container mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-12">How SanchayKart Flex Works</h2>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="p-6 bg-gradient-card border-border/50 shadow-card hover:shadow-glow transition-all duration-300">
+              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
+                <ShoppingCart className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Post Your Request</h3>
+              <p className="text-sm text-muted-foreground">
+                Vendors post what they need with their desired price and quantity
+              </p>
+            </Card>
+
+            <Card className="p-6 bg-gradient-card border-border/50 shadow-card hover:shadow-glow transition-all duration-300">
+              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
+                <TrendingUp className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Receive Offers</h3>
+              <p className="text-sm text-muted-foreground">
+                Suppliers browse and make competitive offers with their best prices
+              </p>
+            </Card>
+
+            <Card className="p-6 bg-gradient-card border-border/50 shadow-card hover:shadow-glow transition-all duration-300">
+              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
+                <Users className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Group Buying</h3>
+              <p className="text-sm text-muted-foreground">
+                Form groups to negotiate better prices and split bulk orders
+              </p>
+            </Card>
+
+            <Card className="p-6 bg-gradient-card border-border/50 shadow-card hover:shadow-glow transition-all duration-300">
+              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
+                <Shield className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">Secure Deals</h3>
+              <p className="text-sm text-muted-foreground">
+                Complete transactions with confidence through our secure platform
+              </p>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section - Added Tutorial Modal Here */}
+      <section className="py-16 px-4 bg-gradient-card">
+        <div className="container mx-auto text-center">
+          <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Business?</h2>
+          <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
+            Join thousands of vendors and suppliers who are already using SanchayKart Flex to get better deals.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {/* ✅ Keep original "Start Trading Now" button */}
+            <Link to="/register">
+              <Button size="lg" className="shadow-glow">
+                Start Trading Now
+              </Button>
+            </Link>
             
-            {/* Tutorial Dialog */}
+            {/* ✅ Add Tutorial Button as secondary option */}
             <Dialog open={isTutorialOpen} onOpenChange={setIsTutorialOpen}>
               <DialogTrigger asChild>
-                <Button size="sm">
+                <Button variant="outline" size="lg">
                   <Play className="w-4 h-4 mr-2" />
-                  Get Started
+                  Learn How It Works
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
@@ -191,7 +293,6 @@ const Landing = () => {
                             <p className="text-muted-foreground mb-3">
                               Join with other vendors to get bulk discounts on larger quantities
                             </p>
-                            {/* ✅ Removed the white background box */}
                             <p className="text-sm text-orange-700 dark:text-orange-300">
                               <strong>Example:</strong> 5 vendors each need 20kg rice → Join together for 100kg → Get ₹5/kg discount!
                             </p>
@@ -201,7 +302,7 @@ const Landing = () => {
                     </div>
 
                     <div className="flex gap-3 pt-4">
-                      <Link to="/auth?role=vendor" className="flex-1">
+                      <Link to="/register?role=vendor" className="flex-1">
                         <Button className="w-full">
                           Start as Vendor
                           <ArrowRight className="w-4 h-4 ml-2" />
@@ -302,7 +403,6 @@ const Landing = () => {
                             <p className="text-muted-foreground mb-3">
                               Get selected by vendors and complete deliveries to build your reputation
                             </p>
-                            {/* ✅ Removed the white background box */}
                             <p className="text-sm text-green-700 dark:text-green-300">
                               <strong>Success Rate:</strong> Higher success rate = More visibility in vendor searches
                             </p>
@@ -324,7 +424,6 @@ const Landing = () => {
                             <p className="text-muted-foreground mb-3">
                               Bid on large group orders for higher profits and bulk sales
                             </p>
-                            {/* ✅ Removed the white background box */}
                             <p className="text-sm text-orange-700 dark:text-orange-300">
                               <strong>Example:</strong> Group order of 500kg rice → Higher volume = Better margins for you
                             </p>
@@ -334,7 +433,7 @@ const Landing = () => {
                     </div>
 
                     <div className="flex gap-3 pt-4">
-                      <Link to="/auth?role=supplier" className="flex-1">
+                      <Link to="/register?role=supplier" className="flex-1">
                         <Button className="w-full">
                           Start as Supplier
                           <ArrowRight className="w-4 h-4 ml-2" />
@@ -344,7 +443,7 @@ const Landing = () => {
                   </TabsContent>
                 </Tabs>
 
-                {/* ✅ Updated Benefits Section - Removed white background and updated text */}
+                {/* Benefits Section */}
                 <div className="mt-8 p-6 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border border-primary/20">
                   <h4 className="text-lg font-semibold mb-3 text-center">Why Choose SanchayKart Flex?</h4>
                   <div className="grid grid-cols-2 gap-4 text-sm">
@@ -368,105 +467,7 @@ const Landing = () => {
                 </div>
               </DialogContent>
             </Dialog>
-          </nav>
-        </div>
-      </header>
-
-      {/* Rest of the component remains the same... */}
-      {/* Hero Section */}
-      <section className="py-20 px-4">
-        <div className="container mx-auto text-center">
-          <div className="max-w-3xl mx-auto">
-            <Badge variant="outline" className="mb-6">
-              🚀 Revolutionary Marketplace
-            </Badge>
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-primary bg-clip-text text-transparent">
-              Vendors set their price,
-              <br />
-              Suppliers make offers
-            </h1>
-            <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-              The first dynamic bidding marketplace for street vendors. Get raw materials at your preferred price through real-time negotiations and group buying.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/auth?role=vendor">
-                <Button size="lg" className="w-full sm:w-auto">
-                  I'm a Vendor
-                </Button>
-              </Link>
-              <Link to="/auth?role=supplier">
-                <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                  I'm a Supplier
-                </Button>
-              </Link>
-            </div>
           </div>
-        </div>
-      </section>
-
-      {/* Features Grid */}
-      <section className="py-16 px-4">
-        <div className="container mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">How SanchayKart Flex Works</h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="p-6 bg-gradient-card border-border/50 shadow-card hover:shadow-glow transition-all duration-300">
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                <ShoppingCart className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Post Your Request</h3>
-              <p className="text-sm text-muted-foreground">
-                Vendors post what they need with their desired price and quantity
-              </p>
-            </Card>
-
-            <Card className="p-6 bg-gradient-card border-border/50 shadow-card hover:shadow-glow transition-all duration-300">
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                <TrendingUp className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Receive Offers</h3>
-              <p className="text-sm text-muted-foreground">
-                Suppliers browse and make competitive offers with their best prices
-              </p>
-            </Card>
-
-            <Card className="p-6 bg-gradient-card border-border/50 shadow-card hover:shadow-glow transition-all duration-300">
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                <Users className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Group Buying</h3>
-              <p className="text-sm text-muted-foreground">
-                Form groups to negotiate better prices and split bulk orders
-              </p>
-            </Card>
-
-            <Card className="p-6 bg-gradient-card border-border/50 shadow-card hover:shadow-glow transition-all duration-300">
-              <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4">
-                <Shield className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Secure Deals</h3>
-              <p className="text-sm text-muted-foreground">
-                Complete transactions with confidence through our secure platform
-              </p>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-16 px-4 bg-gradient-card">
-        <div className="container mx-auto text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Business?</h2>
-          <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Join thousands of vendors and suppliers who are already using SanchayKart Flex to get better deals.
-          </p>
-          <Button 
-            size="lg" 
-            className="shadow-glow"
-            onClick={() => setIsTutorialOpen(true)}
-          >
-            <Play className="w-4 h-4 mr-2" />
-            Learn How It Works
-          </Button>
         </div>
       </section>
 
