@@ -28,8 +28,8 @@ router.post('/:offerId/accept', checkRole('vendor'), offerController.acceptOffer
 // Reject an offer (vendors only) 
 router.post('/:offerId/reject', checkRole('vendor'), offerController.rejectOffer);
 
-// Counter offer (vendors only)
-router.post('/:offerId/counter', checkRole('vendor'), offerController.counterOffer);
+    // Counter offer (vendors only)
+    router.post('/:offerId/counter', checkRole('vendor'), offerController.counterOffer);
 
 // Supplier responds to counter offer
 router.post('/:offerId/respond-counter', checkRole('supplier'), offerController.respondToCounter);
