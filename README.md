@@ -1,4 +1,4 @@
-# SanchayKart Flex - Backend API
+# SanchayKart Flex
 
 A comprehensive group buying and bulk purchasing platform that connects vendors and suppliers for better pricing through collective bargaining.
 
