@@ -306,9 +306,12 @@ const RequestCard = ({ request }: RequestCardProps) => {
   };
 
   const handleViewDetails = () => {
-    const requestId = request._id || request.id;
-    console.log("View details for request:", requestId);
-  };
+  const requestId = request._id || request.id;
+  console.log("View details for request:", requestId);
+  // Add actual navigation
+  navigate(`/vendor/requests/${requestId}`);
+};
+
 
   return (
     <>
