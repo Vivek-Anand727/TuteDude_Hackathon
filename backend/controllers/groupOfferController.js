@@ -10,21 +10,44 @@ exports.createGroupOffer = async (req, res) => {
     const supplierId = req.user._id;
 
     if (!groupRequestId || !offeredPrice || !eta) {
-      return res.status(400).json({ success: false, message: 'Missing required fields' });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Missing required fields' 
+      });
     }
 
     // Check if group request exists and is active
     const groupRequest = await GroupRequest.findById(groupRequestId).populate('group');
     if (!groupRequest) {
-      return res.status(404).json({ success: false, message: 'Group request not found' });
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Group request not found' 
+      });
     }
 
     if (groupRequest.status !== 'active') {
-      return res.status(400).json({ success: false, message: 'Group request is not active' });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Group request is not active' 
+      });
+    }
+
+    // Check if supplier already made an offer
+    const existingOffer = await GroupOffer.findOne({
+      groupRequest: groupRequestId,
+      supplier: supplierId
+    });
+
+    if (existingOffer) {
+      return res.status(400).json({
+        success: false,
+        message: 'You have already made an offer for this group request'
+      });
     }
 
     // Calculate total price based on quantity
-    const quantityNumber = parseInt(groupRequest.quantity.match(/\d+/)[0]);
+    const quantityMatch = groupRequest.quantity.match(/(\d+(?:\.\d+)?)/);
+    const quantityNumber = quantityMatch ? parseFloat(quantityMatch[0]) : 1;
     const totalPrice = offeredPrice * quantityNumber;
 
     const newOffer = new GroupOffer({
@@ -64,7 +87,11 @@ exports.createGroupOffer = async (req, res) => {
     });
   } catch (err) {
     console.error("Create group offer error:", err);
-    res.status(500).json({ success: false, message: 'Server error', error: err.message });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error', 
+      error: err.message 
+    });
   }
 };
 
@@ -84,12 +111,25 @@ exports.acceptGroupOffer = async (req, res) => {
       });
 
     if (!offer) {
-      return res.status(404).json({ success: false, message: 'Offer not found' });
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Offer not found' 
+      });
     }
 
     // Check if user is the group leader
     if (offer.groupRequest.group.leader.toString() !== userId.toString()) {
-      return res.status(403).json({ success: false, message: 'Only group leader can accept offers' });
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Only group leader can accept offers' 
+      });
+    }
+
+    if (offer.status === 'accepted') {
+      return res.status(400).json({
+        success: false,
+        message: 'Offer already accepted'
+      });
     }
 
     // Update offer status
@@ -142,7 +182,11 @@ exports.acceptGroupOffer = async (req, res) => {
     });
   } catch (err) {
     console.error("Accept group offer error:", err);
-    res.status(500).json({ success: false, message: 'Server error', error: err.message });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error', 
+      error: err.message 
+    });
   }
 };
 
@@ -163,16 +207,23 @@ exports.counterGroupOffer = async (req, res) => {
       });
 
     if (!offer) {
-      return res.status(404).json({ success: false, message: 'Offer not found' });
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Offer not found' 
+      });
     }
 
     // Check if user is the group leader
     if (offer.groupRequest.group.leader.toString() !== userId.toString()) {
-      return res.status(403).json({ success: false, message: 'Only group leader can counter offers' });
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Only group leader can counter offers' 
+      });
     }
 
     // Calculate new total price
-    const quantityNumber = parseInt(offer.groupRequest.quantity.match(/\d+/)[0]);
+    const quantityMatch = offer.groupRequest.quantity.match(/(\d+(?:\.\d+)?)/);
+    const quantityNumber = quantityMatch ? parseFloat(quantityMatch[0]) : 1;
     const newTotalPrice = (offeredPrice || offer.offeredPrice) * quantityNumber;
 
     // Update offer with counter details
@@ -200,7 +251,11 @@ exports.counterGroupOffer = async (req, res) => {
     });
   } catch (err) {
     console.error("Counter group offer error:", err);
-    res.status(500).json({ success: false, message: 'Server error', error: err.message });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error', 
+      error: err.message 
+    });
   }
 };
 
@@ -208,21 +263,36 @@ exports.counterGroupOffer = async (req, res) => {
 exports.respondToCounter = async (req, res) => {
   try {
     const { offerId } = req.params;
-    const { action, offeredPrice, eta, notes } = req.body; // action: 'accept' or 'counter'
+    const { action, offeredPrice, eta, notes } = req.body;
     const userId = req.user._id;
 
-    const offer = await GroupOffer.findById(offerId);
+    if (!action || !['accept', 'counter'].includes(action)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid action. Must be "accept" or "counter"'
+      });
+    }
+
+    const offer = await GroupOffer.findById(offerId)
+      .populate('groupRequest');
+    
     if (!offer) {
-      return res.status(404).json({ success: false, message: 'Offer not found' });
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Offer not found' 
+      });
     }
 
     // Check if user is the supplier
     if (offer.supplier.toString() !== userId.toString()) {
-      return res.status(403).json({ success: false, message: 'Only supplier can respond to counter offers' });
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Only supplier can respond to counter offers' 
+      });
     }
 
     if (action === 'accept') {
-      offer.status = 'under_negotiation'; // Leader can now accept this
+      offer.status = 'under_negotiation';
       offer.negotiationHistory.push({
         by: 'supplier',
         action: 'accept',
@@ -232,7 +302,8 @@ exports.respondToCounter = async (req, res) => {
         timestamp: new Date()
       });
     } else if (action === 'counter') {
-      const quantityNumber = parseInt(offer.groupRequest.quantity.match(/\d+/)[0]);
+      const quantityMatch = offer.groupRequest.quantity.match(/(\d+(?:\.\d+)?)/);
+      const quantityNumber = quantityMatch ? parseFloat(quantityMatch[0]) : 1;
       const newTotalPrice = (offeredPrice || offer.offeredPrice) * quantityNumber;
 
       offer.offeredPrice = offeredPrice || offer.offeredPrice;
@@ -260,7 +331,11 @@ exports.respondToCounter = async (req, res) => {
     });
   } catch (err) {
     console.error("Respond to counter error:", err);
-    res.status(500).json({ success: false, message: 'Server error', error: err.message });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error', 
+      error: err.message 
+    });
   }
 };
 
@@ -273,11 +348,17 @@ exports.getGroupOffersForRequest = async (req, res) => {
     // Verify user is the group leader
     const groupRequest = await GroupRequest.findById(groupRequestId).populate('group');
     if (!groupRequest) {
-      return res.status(404).json({ success: false, message: 'Group request not found' });
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Group request not found' 
+      });
     }
 
     if (groupRequest.group.leader.toString() !== userId.toString()) {
-      return res.status(403).json({ success: false, message: 'Only group leader can view offers' });
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Only group leader can view offers' 
+      });
     }
 
     const offers = await GroupOffer.find({ groupRequest: groupRequestId })
@@ -293,7 +374,11 @@ exports.getGroupOffersForRequest = async (req, res) => {
     res.status(200).json({ success: true, offers });
   } catch (err) {
     console.error("Get group offers error:", err);
-    res.status(500).json({ success: false, message: 'Server error', error: err.message });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error', 
+      error: err.message 
+    });
   }
 };
 
@@ -318,7 +403,11 @@ exports.getMyGroupOffers = async (req, res) => {
     res.status(200).json({ success: true, offers });
   } catch (err) {
     console.error("Get my group offers error:", err);
-    res.status(500).json({ success: false, message: 'Server error', error: err.message });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error', 
+      error: err.message 
+    });
   }
 };
 
@@ -351,6 +440,10 @@ exports.getActiveGroupRequests = async (req, res) => {
     res.status(200).json({ success: true, groupRequests });
   } catch (err) {
     console.error("Get active group requests error:", err);
-    res.status(500).json({ success: false, message: 'Server error', error: err.message });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error', 
+      error: err.message 
+    });
   }
 };

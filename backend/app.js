@@ -1,4 +1,3 @@
-// app.js (Enhanced)
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -30,17 +29,23 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// Rate limiting
+// Rate limiting - Apply more selectively
 const limiter = rateLimit({
   windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
   message: {
     success: false,
     error: 'Too many requests from this IP, please try again later.'
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    // Skip rate limiting for health check and development
+    return req.path === '/health' || process.env.NODE_ENV === 'development';
+  }
 });
+
+// Apply rate limiting only to API routes
 app.use('/api/', limiter);
 
 // ====== BASIC MIDDLEWARE ======
@@ -53,18 +58,13 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 if (process.env.NODE_ENV === 'development') {
   app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+    console.log('Headers:', req.headers);
+    console.log('Body:', req.body);
     next();
   });
 }
 
-// ====== API ROUTES ======
-
-app.use('/api/auth', authRoutes);
-app.use('/api/groups', groupRoutes);
-app.use('/api/requests', requestRoutes);
-app.use('/api/offers', offerRoutes);
-
-// ====== HEALTH CHECK ======
+// ====== HEALTH CHECK (before rate limiting affects it) ======
 
 app.get('/health', (req, res) => {
   res.status(200).json({
@@ -75,19 +75,49 @@ app.get('/health', (req, res) => {
   });
 });
 
+// ====== API ROUTES ======
+
+// Routes order matters - more specific routes should come first
+app.use('/api/auth', authRoutes);
+app.use('/api/groups', groupRoutes);
+app.use('/api/requests', requestRoutes);
+app.use('/api/offers', offerRoutes);
+
+// Debug route to test if server is receiving requests
+if (process.env.NODE_ENV === 'development') {
+  app.use('/api/debug', (req, res) => {
+    res.json({
+      success: true,
+      method: req.method,
+      path: req.path,
+      headers: req.headers,
+      body: req.body,
+      query: req.query
+    });
+  });
+}
+
 // ====== ERROR HANDLING ======
 
 // 404 handler
 app.use('*', (req, res) => {
+  console.log(`404 - Route not found: ${req.method} ${req.originalUrl}`);
   res.status(404).json({
     success: false,
-    error: `Route ${req.originalUrl} not found`
+    error: `Route ${req.originalUrl} not found`,
+    method: req.method
   });
 });
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
+  console.error('Global Error Handler:', err);
+  console.error('Stack:', err.stack);
+  console.error('Request:', {
+    method: req.method,
+    url: req.url,
+    body: req.body
+  });
 
   // Mongoose validation error
   if (err.name === 'ValidationError') {
@@ -126,7 +156,8 @@ app.use((err, req, res, next) => {
   // Default server error
   res.status(500).json({
     success: false,
-    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    error: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error',
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
   });
 });
 
@@ -147,16 +178,36 @@ const connectDB = async () => {
       console.log(`🚀 SanchayKart Flex API running on port ${PORT}`);
       console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
       console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+      console.log(`🛠️  Debug route: http://localhost:${PORT}/api/debug`);
+      
+      // Log all registered routes in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('\n📋 Registered Routes:');
+        app._router.stack.forEach((middleware) => {
+          if (middleware.route) {
+            console.log(`   ${Object.keys(middleware.route.methods).join(', ').toUpperCase()} ${middleware.route.path}`);
+          } else if (middleware.name === 'router') {
+            console.log(`   Router: ${middleware.regexp}`);
+          }
+        });
+        console.log('');
+      }
     });
 
     // Graceful shutdown
-    process.on('SIGTERM', () => {
-      console.log('SIGTERM received, shutting down gracefully');
+    const gracefulShutdown = (signal) => {
+      console.log(`${signal} received, shutting down gracefully`);
       server.close(() => {
-        console.log('Process terminated');
-        mongoose.connection.close();
+        console.log('HTTP server closed');
+        mongoose.connection.close(false, () => {
+          console.log('MongoDB connection closed');
+          process.exit(0);
+        });
       });
-    });
+    };
+
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 
   } catch (error) {
     console.error('Database connection failed:', error);
@@ -167,6 +218,14 @@ const connectDB = async () => {
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {
   console.error('Unhandled Promise Rejection:', err.message);
+  console.error('Stack:', err.stack);
+  process.exit(1);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err.message);
+  console.error('Stack:', err.stack);
   process.exit(1);
 });
 

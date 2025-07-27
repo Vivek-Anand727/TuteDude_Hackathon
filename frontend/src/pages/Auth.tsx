@@ -30,49 +30,89 @@ const Auth = () => {
     location: "",
     phone: "",
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
 
+  // ✅ Helper function to setup axios defaults after authentication
+  const setupAxiosAuth = (token: string) => {
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  };
+
   const handleLogin = async () => {
+    if (!loginData.email || !loginData.password) {
+      alert("Please enter both email and password");
+      return;
+    }
+
+    setIsLoading(true);
+    
     try {
       const res = await axios.post(`${BACKEND_URL}/api/auth/login`, loginData);
       const { token, user } = res.data;
 
-      console.log("Login response:", res.data); // 🔍 Helpful debug
+      console.log("Login response:", res.data); 
 
       if (!user?.role) {
         alert("Role missing in user response");
         return;
       }
 
+      // ✅ Store credentials
       localStorage.setItem("token", token);
       localStorage.setItem("role", user.role);
+      localStorage.setItem("userId", user._id);
+      localStorage.setItem("userName", user.name);
+      
+      // ✅ Setup axios defaults for future requests
+      setupAxiosAuth(token);
 
       alert("Login successful!");
       navigate(`/${user.role}/dashboard`);
     } catch (err: any) {
-      console.error(err);
-      alert(err.response?.data?.error || "Login failed");
+      console.error("Login error:", err);
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || "Login failed";
+      alert(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleRegister = async () => {
+    const { name, email, password, location, phone } = registerData;
+    
+    if (!name || !email || !password || !location) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    setIsLoading(true);
+
     try {
       const res = await axios.post(`${BACKEND_URL}/api/auth/register`, {
         ...registerData,
         role: selectedRole,
       });
 
-      const { token } = res.data;
+      const { token, user } = res.data;
 
+      // ✅ Store credentials
       localStorage.setItem("token", token);
       localStorage.setItem("role", selectedRole);
+      localStorage.setItem("userId", user._id);
+      localStorage.setItem("userName", user.name);
+      
+      // ✅ Setup axios defaults for future requests
+      setupAxiosAuth(token);
 
       alert("Registration successful!");
       navigate(`/${selectedRole}/dashboard`);
     } catch (err: any) {
-      console.error(err);
-      alert(err.response?.data?.error || "Registration failed");
+      console.error("Registration error:", err);
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || "Registration failed";
+      alert(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -115,6 +155,7 @@ const Auth = () => {
                     onChange={(e) =>
                       setLoginData({ ...loginData, email: e.target.value })
                     }
+                    disabled={isLoading}
                   />
                 </div>
                 <div className="space-y-2">
@@ -127,10 +168,16 @@ const Auth = () => {
                     onChange={(e) =>
                       setLoginData({ ...loginData, password: e.target.value })
                     }
+                    disabled={isLoading}
+                    onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
                   />
                 </div>
-                <Button className="w-full" onClick={handleLogin}>
-                  Sign In
+                <Button 
+                  className="w-full" 
+                  onClick={handleLogin}
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Signing In..." : "Sign In"}
                 </Button>
               </TabsContent>
 
@@ -145,11 +192,12 @@ const Auth = () => {
                         type="button"
                         key={role}
                         onClick={() => setSelectedRole(role)}
+                        disabled={isLoading}
                         className={`p-3 rounded-lg border transition-all ${
                           selectedRole === role
                             ? "border-primary bg-primary/10 shadow-glow"
                             : "border-border bg-card hover:border-primary/50"
-                        }`}
+                        } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
                       >
                         <div className="flex flex-col items-center space-y-2">
                           {role === "vendor" ? (
@@ -174,34 +222,41 @@ const Auth = () => {
                     key: "name",
                     type: "text",
                     placeholder: "Enter your full name",
+                    required: true,
                   },
                   {
                     label: "Email",
                     key: "email",
                     type: "email",
                     placeholder: "Enter your email",
+                    required: true,
                   },
                   {
                     label: "Location",
                     key: "location",
                     type: "text",
                     placeholder: "City, Pincode",
+                    required: true,
                   },
                   {
                     label: "Phone",
                     key: "phone",
                     type: "text",
                     placeholder: "Phone number",
+                    required: false,
                   },
                   {
                     label: "Password",
                     key: "password",
                     type: "password",
                     placeholder: "Create a password",
+                    required: true,
                   },
-                ].map(({ label, key, type, placeholder }) => (
+                ].map(({ label, key, type, placeholder, required }) => (
                   <div key={key} className="space-y-2">
-                    <Label htmlFor={key}>{label}</Label>
+                    <Label htmlFor={key}>
+                      {label} {required && <span className="text-red-500">*</span>}
+                    </Label>
                     <Input
                       id={key}
                       type={type}
@@ -213,13 +268,20 @@ const Auth = () => {
                           [key]: e.target.value,
                         })
                       }
+                      disabled={isLoading}
                     />
                   </div>
                 ))}
 
-                <Button className="w-full" onClick={handleRegister}>
-                  Create Account as{" "}
-                  {selectedRole === "vendor" ? "Vendor" : "Supplier"}
+                <Button 
+                  className="w-full" 
+                  onClick={handleRegister}
+                  disabled={isLoading}
+                >
+                  {isLoading 
+                    ? "Creating Account..." 
+                    : `Create Account as ${selectedRole === "vendor" ? "Vendor" : "Supplier"}`
+                  }
                 </Button>
               </TabsContent>
             </Tabs>

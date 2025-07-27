@@ -8,11 +8,13 @@ import {
   AlertCircle, 
   IndianRupee,
   MapPin,
-  Package
+  Package,
+  Calendar
 } from "lucide-react";
 
 interface Request {
-  id: string;
+  _id: string;
+  id?: string;
   item: string;
   quantity: string;
   desiredPrice: number;
@@ -21,6 +23,8 @@ interface Request {
   offersCount?: number;
   acceptedPrice?: number;
   createdAt: string;
+  description?: string;
+  urgency?: string;
 }
 
 interface RequestCardProps {
@@ -40,16 +44,16 @@ const RequestCard = ({ request }: RequestCardProps) => {
       case "fulfilled":
         return {
           label: "Fulfilled",
-          variant: "default" as const,
+          variant: "secondary" as const,
           icon: CheckCircle,
-          color: "text-success"
+          color: "text-green-600"
         };
       case "expired":
         return {
           label: "Expired", 
-          variant: "secondary" as const,
+          variant: "destructive" as const,
           icon: AlertCircle,
-          color: "text-muted-foreground"
+          color: "text-red-600"
         };
       default:
         return {
@@ -71,6 +75,20 @@ const RequestCard = ({ request }: RequestCardProps) => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const handleViewOffers = () => {
+    // Navigate to offers page - you can implement this based on your routing
+    const requestId = request._id || request.id;
+    console.log("View offers for request:", requestId);
+    // Example: navigate(`/vendor/offers/${requestId}`);
+  };
+
+  const handleViewDetails = () => {
+    // Navigate to request details page
+    const requestId = request._id || request.id;
+    console.log("View details for request:", requestId);
+    // Example: navigate(`/vendor/requests/${requestId}`);
   };
 
   return (
@@ -103,6 +121,13 @@ const RequestCard = ({ request }: RequestCardProps) => {
       </CardHeader>
       
       <CardContent className="pt-0">
+        {/* Description if available */}
+        {request.description && (
+          <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+            {request.description}
+          </p>
+        )}
+
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">Desired Price</p>
@@ -115,7 +140,7 @@ const RequestCard = ({ request }: RequestCardProps) => {
           {request.status === "fulfilled" && request.acceptedPrice && (
             <div className="space-y-1">
               <p className="text-sm text-muted-foreground">Final Price</p>
-              <p className="text-lg font-semibold text-success flex items-center">
+              <p className="text-lg font-semibold text-green-600 flex items-center">
                 <IndianRupee className="w-4 h-4 mr-1" />
                 {request.acceptedPrice}/kg
               </p>
@@ -130,21 +155,31 @@ const RequestCard = ({ request }: RequestCardProps) => {
               </p>
             </div>
           )}
+
+          {request.urgency && (
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Urgency</p>
+              <Badge variant="outline" className="capitalize">
+                {request.urgency}
+              </Badge>
+            </div>
+          )}
         </div>
         
         <div className="flex items-center justify-between">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground flex items-center">
+            <Calendar className="w-3 h-3 mr-1" />
             Posted {formatDate(request.createdAt)}
           </p>
           
           <div className="flex space-x-2">
             {request.status === "open" && request.offersCount && request.offersCount > 0 && (
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" onClick={handleViewOffers}>
                 <Eye className="w-4 h-4 mr-2" />
                 View Offers ({request.offersCount})
               </Button>
             )}
-            <Button size="sm" variant="ghost">
+            <Button size="sm" variant="ghost" onClick={handleViewDetails}>
               Details
             </Button>
           </div>

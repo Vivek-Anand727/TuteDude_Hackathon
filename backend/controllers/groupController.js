@@ -5,10 +5,18 @@ const User = require('../models/User');
 // Create a new group
 exports.createGroup = async (req, res) => {
   try {
+    console.log('Create group route hit:', req.body);
+    console.log('User:', req.user);
+
     const { name, description, item, quantity, desiredPrice, location, maxMembers } = req.body;
 
+    // Validate required fields
     if (!name || !item || !quantity || !desiredPrice || !location) {
-      return res.status(400).json({ error: "Missing required fields." });
+      return res.status(400).json({ 
+        success: false,
+        error: "Missing required fields",
+        required: ['name', 'item', 'quantity', 'desiredPrice', 'location']
+      });
     }
 
     const userId = req.user._id;
@@ -19,7 +27,7 @@ exports.createGroup = async (req, res) => {
 
     const newGroup = new Group({
       name,
-      description,
+      description: description || '',
       item,
       totalQuantity: quantity,
       desiredPrice,
@@ -39,6 +47,8 @@ exports.createGroup = async (req, res) => {
     await newGroup.populate('leader', 'name email role');
     await newGroup.populate('members.user', 'name email role');
 
+    console.log('Group created successfully:', newGroup._id);
+
     res.status(201).json({
       success: true,
       message: "Group created successfully",
@@ -46,7 +56,11 @@ exports.createGroup = async (req, res) => {
     });
   } catch (error) {
     console.error("Create group error:", error);
-    res.status(500).json({ error: "Server error", details: error.message });
+    res.status(500).json({ 
+      success: false,
+      error: "Server error", 
+      details: error.message 
+    });
   }
 };
 
@@ -58,26 +72,41 @@ exports.joinGroup = async (req, res) => {
     const userId = req.user._id;
 
     if (!quantity) {
-      return res.status(400).json({ error: "Quantity is required to join group." });
+      return res.status(400).json({ 
+        success: false,
+        error: "Quantity is required to join group." 
+      });
     }
 
     const group = await Group.findById(groupId);
     if (!group) {
-      return res.status(404).json({ error: "Group not found." });
+      return res.status(404).json({ 
+        success: false,
+        error: "Group not found." 
+      });
     }
 
     if (group.status !== 'forming') {
-      return res.status(400).json({ error: "Group is no longer accepting members." });
+      return res.status(400).json({ 
+        success: false,
+        error: "Group is no longer accepting members." 
+      });
     }
 
     if (group.members.length >= group.maxMembers) {
-      return res.status(400).json({ error: "Group is full." });
+      return res.status(400).json({ 
+        success: false,
+        error: "Group is full." 
+      });
     }
 
     // Check if user is already a member
     const existingMember = group.members.find(member => member.user.toString() === userId.toString());
     if (existingMember) {
-      return res.status(400).json({ error: "User already in the group." });
+      return res.status(400).json({ 
+        success: false,
+        error: "User already in the group." 
+      });
     }
 
     // Add user to group
@@ -87,30 +116,28 @@ exports.joinGroup = async (req, res) => {
       joinedAt: new Date()
     });
 
-    // FIXED: Proper quantity summation instead of multiplication
+    // Calculate total quantity properly
     const calculateTotalQuantity = (members) => {
       let totalNumber = 0;
       let unit = '';
 
       members.forEach(member => {
-        // Safe regex matching with error handling
         const quantityMatch = member.quantity.match(/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)$/);
         if (quantityMatch) {
           const number = parseFloat(quantityMatch[1]);
           const memberUnit = quantityMatch[2];
           
           if (!unit) {
-            unit = memberUnit; // Set unit from first member
+            unit = memberUnit;
           }
           
-          // Only add if units match
           if (memberUnit.toLowerCase() === unit.toLowerCase()) {
             totalNumber += number;
           }
         }
       });
 
-      return totalNumber > 0 ? `${totalNumber}${unit}` : quantity; // fallback to original quantity
+      return totalNumber > 0 ? `${totalNumber}${unit}` : quantity;
     };
 
     group.totalQuantity = calculateTotalQuantity(group.members);
@@ -125,7 +152,11 @@ exports.joinGroup = async (req, res) => {
     });
   } catch (error) {
     console.error("Join group error:", error);
-    res.status(500).json({ error: "Server error", details: error.message });
+    res.status(500).json({ 
+      success: false,
+      error: "Server error", 
+      details: error.message 
+    });
   }
 };
 
@@ -137,12 +168,18 @@ exports.leaveGroup = async (req, res) => {
 
     const group = await Group.findById(groupId);
     if (!group) {
-      return res.status(404).json({ error: "Group not found." });
+      return res.status(404).json({ 
+        success: false,
+        error: "Group not found." 
+      });
     }
 
     // Can't leave if you're the leader and there are other members
     if (group.leader.toString() === userId.toString() && group.members.length > 1) {
-      return res.status(400).json({ error: "Assign a new leader before leaving the group." });
+      return res.status(400).json({ 
+        success: false,
+        error: "Assign a new leader before leaving the group." 
+      });
     }
 
     // Remove user from members
@@ -165,7 +202,11 @@ exports.leaveGroup = async (req, res) => {
     });
   } catch (error) {
     console.error("Leave group error:", error);
-    res.status(500).json({ error: "Server error", details: error.message });
+    res.status(500).json({ 
+      success: false,
+      error: "Server error", 
+      details: error.message 
+    });
   }
 };
 
@@ -177,23 +218,35 @@ exports.assignLeader = async (req, res) => {
     const currentUserId = req.user._id;
 
     if (!newLeaderId) {
-      return res.status(400).json({ error: "New leader ID is required." });
+      return res.status(400).json({ 
+        success: false,
+        error: "New leader ID is required." 
+      });
     }
 
     const group = await Group.findById(groupId);
     if (!group) {
-      return res.status(404).json({ error: "Group not found." });
+      return res.status(404).json({ 
+        success: false,
+        error: "Group not found." 
+      });
     }
 
     // Only current leader can assign new leader
     if (group.leader.toString() !== currentUserId.toString()) {
-      return res.status(403).json({ error: "Only group leader can assign new leader." });
+      return res.status(403).json({ 
+        success: false,
+        error: "Only group leader can assign new leader." 
+      });
     }
 
     // Check if new leader is a member
     const memberExists = group.members.some(member => member.user.toString() === newLeaderId.toString());
     if (!memberExists) {
-      return res.status(400).json({ error: "User must be a member of the group to be a leader." });
+      return res.status(400).json({ 
+        success: false,
+        error: "User must be a member of the group to be a leader." 
+      });
     }
 
     group.leader = newLeaderId;
@@ -207,7 +260,11 @@ exports.assignLeader = async (req, res) => {
     });
   } catch (error) {
     console.error("Assign leader error:", error);
-    res.status(500).json({ error: "Server error", details: error.message });
+    res.status(500).json({ 
+      success: false,
+      error: "Server error", 
+      details: error.message 
+    });
   }
 };
 
@@ -219,16 +276,34 @@ exports.createGroupRequest = async (req, res) => {
 
     const group = await Group.findById(groupId);
     if (!group) {
-      return res.status(404).json({ error: "Group not found." });
+      return res.status(404).json({ 
+        success: false,
+        error: "Group not found." 
+      });
     }
 
     // Only leader can create group request
     if (group.leader.toString() !== userId.toString()) {
-      return res.status(403).json({ error: "Only group leader can create group request." });
+      return res.status(403).json({ 
+        success: false,
+        error: "Only group leader can create group request." 
+      });
     }
 
     if (group.status !== 'forming') {
-      return res.status(400).json({ error: "Group request already exists or group is closed." });
+      return res.status(400).json({ 
+        success: false,
+        error: "Group request already exists or group is closed." 
+      });
+    }
+
+    // Check if group request already exists
+    const existingRequest = await GroupRequest.findOne({ group: groupId });
+    if (existingRequest) {
+      return res.status(400).json({
+        success: false,
+        error: "Group request already exists for this group."
+      });
     }
 
     // Set expiration for request (3 days from now)
@@ -258,7 +333,46 @@ exports.createGroupRequest = async (req, res) => {
     });
   } catch (error) {
     console.error("Create group request error:", error);
-    res.status(500).json({ error: "Server error", details: error.message });
+    res.status(500).json({ 
+      success: false,
+      error: "Server error", 
+      details: error.message 
+    });
+  }
+};
+
+// Get group request details
+exports.getGroupRequest = async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    
+    const groupRequest = await GroupRequest.findOne({ group: groupId })
+      .populate({
+        path: 'group',
+        populate: [
+          { path: 'leader', select: 'name email phone' },
+          { path: 'members.user', select: 'name email' }
+        ]
+      });
+
+    if (!groupRequest) {
+      return res.status(404).json({
+        success: false,
+        error: 'Group request not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      groupRequest
+    });
+  } catch (error) {
+    console.error('Get group request error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Server error',
+      details: error.message
+    });
   }
 };
 
@@ -280,7 +394,11 @@ exports.getMyGroups = async (req, res) => {
     });
   } catch (error) {
     console.error("Get my groups error:", error);
-    res.status(500).json({ error: "Server error", details: error.message });
+    res.status(500).json({ 
+      success: false,
+      error: "Server error", 
+      details: error.message 
+    });
   }
 };
 
@@ -315,7 +433,11 @@ exports.getAvailableGroups = async (req, res) => {
     });
   } catch (error) {
     console.error("Get available groups error:", error);
-    res.status(500).json({ error: "Server error", details: error.message });
+    res.status(500).json({ 
+      success: false,
+      error: "Server error", 
+      details: error.message 
+    });
   }
 };
 
@@ -329,7 +451,10 @@ exports.getGroupDetails = async (req, res) => {
       .populate('members.user', 'name email role phone');
 
     if (!group) {
-      return res.status(404).json({ error: "Group not found." });
+      return res.status(404).json({ 
+        success: false,
+        error: "Group not found." 
+      });
     }
 
     res.status(200).json({
@@ -338,6 +463,10 @@ exports.getGroupDetails = async (req, res) => {
     });
   } catch (error) {
     console.error("Get group details error:", error);
-    res.status(500).json({ error: "Server error", details: error.message });
+    res.status(500).json({ 
+      success: false,
+      error: "Server error", 
+      details: error.message 
+    });
   }
 };
