@@ -25,7 +25,11 @@ import {
   ChevronDown,
   ChevronUp,
   MessageSquare,
-  Loader2
+  Loader2,
+  Phone,
+  Mail,
+  Copy,
+  ExternalLink
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -47,6 +51,7 @@ interface Request {
   createdAt: string;
   description?: string;
   urgency?: string;
+  acceptedOffer?: any; // Add this for accepted offer details
 }
 
 interface RequestCardProps {
@@ -71,6 +76,10 @@ const RequestCard = ({ request }: RequestCardProps) => {
   });
   const [submittingCounter, setSubmittingCounter] = useState(false);
 
+  // Contact details state
+  const [showContactDialog, setShowContactDialog] = useState(false);
+  const [acceptedSupplier, setAcceptedSupplier] = useState(null);
+
   const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
     return {
@@ -79,6 +88,22 @@ const RequestCard = ({ request }: RequestCardProps) => {
         'Content-Type': 'application/json',
       },
     };
+  };
+
+  // Copy to clipboard function
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toast({
+        title: "Copied!",
+        description: `${label} copied to clipboard`,
+      });
+    }).catch(() => {
+      toast({
+        title: "Error",
+        description: "Failed to copy to clipboard",
+        variant: "destructive",
+      });
+    });
   };
 
   // Auto-load offer count on component mount
@@ -97,10 +122,15 @@ const RequestCard = ({ request }: RequestCardProps) => {
         // Store offers but don't show them yet
         setOffers(offersData);
         setHasLoadedOffers(true);
+
+        // Check if there's an accepted offer for contact details
+        const acceptedOffer = offersData.find(offer => offer.status === 'accepted');
+        if (acceptedOffer && request.status === 'fulfilled') {
+          setAcceptedSupplier(acceptedOffer.supplier);
+        }
       }
     } catch (error) {
       console.error('🚨 Fetch offer count error:', error);
-      // If error, keep the original count from request
       setActualOffersCount(request.offersCount || 0);
     }
   };
@@ -129,6 +159,12 @@ const RequestCard = ({ request }: RequestCardProps) => {
         setActualOffersCount((res.data.offers || []).length);
         setHasLoadedOffers(true);
         setShowOffers(true);
+
+        // Check for accepted offer
+        const acceptedOffer = (res.data.offers || []).find(offer => offer.status === 'accepted');
+        if (acceptedOffer && request.status === 'fulfilled') {
+          setAcceptedSupplier(acceptedOffer.supplier);
+        }
       }
     } catch (error) {
       console.error('🚨 Fetch offers error:', error);
@@ -150,6 +186,14 @@ const RequestCard = ({ request }: RequestCardProps) => {
           title: "Success",
           description: "Offer accepted successfully!",
         });
+
+        // Find the accepted offer for contact details
+        const acceptedOffer = offers.find(offer => offer._id === offerId);
+        if (acceptedOffer) {
+          setAcceptedSupplier(acceptedOffer.supplier);
+          setShowContactDialog(true); // Show contact details immediately
+        }
+
         // Refresh offers
         setHasLoadedOffers(false);
         setShowOffers(false);
@@ -257,6 +301,9 @@ const RequestCard = ({ request }: RequestCardProps) => {
   useEffect(() => {
     if (request.status === "open") {
       fetchOfferCount();
+    } else if (request.status === "fulfilled") {
+      // For fulfilled requests, also fetch to get contact details
+      fetchOfferCount();
     }
   }, [request._id, request.status]);
 
@@ -306,12 +353,10 @@ const RequestCard = ({ request }: RequestCardProps) => {
   };
 
   const handleViewDetails = () => {
-  const requestId = request._id || request.id;
-  console.log("View details for request:", requestId);
-  // Add actual navigation
-  navigate(`/vendor/requests/${requestId}`);
-};
-
+    const requestId = request._id || request.id;
+    console.log("View details for request:", requestId);
+    navigate(`/vendor/requests/${requestId}`);
+  };
 
   return (
     <>
@@ -385,6 +430,32 @@ const RequestCard = ({ request }: RequestCardProps) => {
               </div>
             )}
           </div>
+
+          {/* Contact Details Section for Fulfilled Orders */}
+          {request.status === "fulfilled" && acceptedSupplier && (
+            <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <h4 className="text-sm font-semibold text-green-800">
+                  Order Confirmed - Supplier Details
+                </h4>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => setShowContactDialog(true)}
+                  className="text-xs"
+                >
+                  <Eye className="w-3 h-3 mr-1" />
+                  View Contact
+                </Button>
+              </div>
+              <div className="text-sm text-green-700">
+                <p className="font-medium">{acceptedSupplier.name}</p>
+                <p className="text-xs text-green-600">
+                  Contact details available - Click "View Contact" for full information
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Offers Section */}
           {request.status === "open" && actualOffersCount > 0 && (
@@ -504,12 +575,143 @@ const RequestCard = ({ request }: RequestCardProps) => {
               Posted {formatDate(request.createdAt)}
             </p>
             
-            <Button size="sm" variant="ghost" onClick={handleViewDetails}>
-              Details
-            </Button>
+            <div className="flex gap-2">
+              {request.status === "fulfilled" && acceptedSupplier && (
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => setShowContactDialog(true)}
+                >
+                  <Phone className="w-3 h-3 mr-1" />
+                  Contact
+                </Button>
+              )}
+              <Button size="sm" variant="ghost" onClick={handleViewDetails}>
+                Details
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Contact Details Dialog */}
+      <Dialog open={showContactDialog} onOpenChange={setShowContactDialog}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="w-5 h-5" />
+              Supplier Contact Details
+            </DialogTitle>
+            <DialogDescription>
+              Order confirmed! Here are the supplier's contact details for coordination.
+            </DialogDescription>
+          </DialogHeader>
+
+          {acceptedSupplier && (
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                  <div>
+                    <p className="font-medium">{acceptedSupplier.name}</p>
+                    <p className="text-sm text-muted-foreground">Supplier Name</p>
+                  </div>
+                </div>
+
+                {acceptedSupplier.phone && (
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium">{acceptedSupplier.phone}</p>
+                        <p className="text-sm text-muted-foreground">Phone Number</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => copyToClipboard(acceptedSupplier.phone, "Phone number")}
+                      >
+                        <Copy className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => window.open(`tel:${acceptedSupplier.phone}`)}
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {acceptedSupplier.email && (
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium">{acceptedSupplier.email}</p>
+                        <p className="text-sm text-muted-foreground">Email Address</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => copyToClipboard(acceptedSupplier.email, "Email address")}
+                      >
+                        <Copy className="w-3 h-3" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => window.open(`mailto:${acceptedSupplier.email}`)}
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {acceptedSupplier.location && (
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-muted-foreground" />
+                      <div>
+                        <p className="font-medium">{acceptedSupplier.location}</p>
+                        <p className="text-sm text-muted-foreground">Location</p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => copyToClipboard(acceptedSupplier.location, "Location")}
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                <p className="text-sm text-green-800">
+                  <CheckCircle className="w-4 h-4 inline mr-1" />
+                  Order Status: Confirmed
+                </p>
+                <p className="text-xs text-green-600 mt-1">
+                  Please coordinate directly with the supplier for delivery details and payment.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button onClick={() => setShowContactDialog(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Counter Offer Dialog */}
       <Dialog open={counterOfferDialog} onOpenChange={setCounterOfferDialog}>

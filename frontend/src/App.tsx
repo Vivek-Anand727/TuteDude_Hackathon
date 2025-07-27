@@ -11,7 +11,6 @@ import NotFound from "./pages/NotFound";
 import VendorRequestOffersPage from "./pages/VendorRequestOffersPage";
 // Add this import
 import VendorRequestDetailsPage from "./pages/VendorRequestDetailsPage";
-
 // Add this route in your <Routes>
 
 

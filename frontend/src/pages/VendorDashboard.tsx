@@ -1,5 +1,5 @@
 "use client";
-
+import ChatBot from "@/components/ChatBot";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -483,7 +483,13 @@ const VendorDashboard = () => {
               />
             )}
           </TabsContent>
-
+ <div className="min-h-screen bg-background">
+        {/* Your existing dashboard content */}
+        {/* ... all your existing JSX ... */}
+      </div>
+      
+      {/* Add ChatBot */}
+      <ChatBot />
           <TabsContent value="group-requests" className="space-y-4">
             {groupRequests.length > 0 ? (
               <div className="grid gap-4">
@@ -525,6 +531,7 @@ const VendorDashboard = () => {
             fetchMyGroups();
           }
         }}
+        
       />
     </div>
   );
