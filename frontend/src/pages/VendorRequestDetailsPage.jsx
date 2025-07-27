@@ -262,16 +262,7 @@ const VendorRequestDetailsPage = () => {
                   </p>
                 </div>
               )}
-
-              {/* ✅ Added fallback navigation */}
-              <Button 
-                variant="outline" 
-                onClick={handleBackNavigation}
-                className="ml-auto"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Go Back
-              </Button>
+             
             </div>
           </CardContent>
         </Card>
