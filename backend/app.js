@@ -22,12 +22,8 @@ const app = express();
 app.use(helmet());
 
 // CORS configuration
-const corsOptions = {
-  origin: process.env.CORS_ORIGIN || ['http://localhost:3000', 'http://localhost:3001'],
-  credentials: true,
-  optionsSuccessStatus: 200
-};
-app.use(cors(corsOptions));
+
+app.use(cors());
 
 // Rate limiting - Apply more selectively
 const limiter = rateLimit({
