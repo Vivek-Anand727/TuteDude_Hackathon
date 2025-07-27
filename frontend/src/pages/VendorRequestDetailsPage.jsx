@@ -28,7 +28,6 @@ const VendorRequestDetailsPage = () => {
   const fetchRequestDetails = async () => {
     try {
       setLoading(true);
-      // You might need to create this endpoint or get it from your existing requests
       const res = await axios.get(
         `${backendURL}/api/requests/${requestId}`,
         getAuthHeaders()
@@ -46,6 +45,23 @@ const VendorRequestDetailsPage = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ✅ Enhanced back navigation function
+  const handleBackNavigation = () => {
+    try {
+      // Try to go back in history first
+      if (window.history.length > 1) {
+        navigate(-1);
+      } else {
+        // Fallback to vendor dashboard
+        navigate('/vendor');
+      }
+    } catch (error) {
+      // If navigate fails, fallback to vendor dashboard
+      console.error('Navigation error:', error);
+      navigate('/vendor');
     }
   };
 
@@ -92,7 +108,9 @@ const VendorRequestDetailsPage = () => {
         <Card>
           <CardContent className="p-8 text-center">
             <h3 className="text-lg font-semibold mb-2">Request not found</h3>
-            <Button onClick={() => navigate('/vendor/dashboard')}>
+            {/* ✅ Fixed back button for not found case */}
+            <Button onClick={handleBackNavigation}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
             </Button>
           </CardContent>
@@ -109,15 +127,36 @@ const VendorRequestDetailsPage = () => {
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
+            {/* ✅ Fixed back button with enhanced navigation */}
             <Button 
               variant="ghost" 
               size="sm" 
-              onClick={() => navigate('/vendor/dashboard')}
+              onClick={handleBackNavigation}
+              className="hover:bg-primary/10"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Dashboard
             </Button>
             <h1 className="text-2xl font-bold text-foreground">Request Details</h1>
+          </div>
+          
+          {/* ✅ Added additional navigation options */}
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate('/vendor')}
+            >
+              Dashboard
+            </Button>
+            {request.status === "open" && request.offersCount > 0 && (
+              <Button 
+                size="sm" 
+                onClick={() => navigate(`/vendor/offers/${request._id}`)}
+              >
+                View Offers ({request.offersCount})
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -132,7 +171,7 @@ const VendorRequestDetailsPage = () => {
                 </div>
                 <div>
                   <CardTitle className="text-2xl">{request.item}</CardTitle>
-                  <p className="text-muted-foreground">Request ID: {request._id}</p>
+                  <p className="text-muted-foreground">Request ID: {request._id?.slice(-8) || 'N/A'}</p>
                 </div>
               </div>
               <Badge variant={statusConfig.variant} className="flex items-center space-x-2">
@@ -208,6 +247,7 @@ const VendorRequestDetailsPage = () => {
             <div className="flex gap-4 pt-4 border-t">
               {request.status === "open" && request.offersCount > 0 && (
                 <Button onClick={() => navigate(`/vendor/offers/${request._id}`)}>
+                  <Eye className="w-4 h-4 mr-2" />
                   View Offers ({request.offersCount})
                 </Button>
               )}
@@ -222,6 +262,16 @@ const VendorRequestDetailsPage = () => {
                   </p>
                 </div>
               )}
+
+              {/* ✅ Added fallback navigation */}
+              <Button 
+                variant="outline" 
+                onClick={handleBackNavigation}
+                className="ml-auto"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Go Back
+              </Button>
             </div>
           </CardContent>
         </Card>
