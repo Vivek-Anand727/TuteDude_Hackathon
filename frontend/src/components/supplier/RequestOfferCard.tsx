@@ -21,9 +21,11 @@ import {
   Clock,
   User,
   MessageSquare,
-  Loader2
+  Loader2,
+  Phone
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
+
 
 const RequestOfferCard = ({ request, onMakeOffer }) => {
   const [isOfferDialogOpen, setIsOfferDialogOpen] = useState(false);
@@ -38,6 +40,12 @@ const RequestOfferCard = ({ request, onMakeOffer }) => {
       deliveryCharge: 0
     }
   });
+
+  // Generate random phone number for vendor (as requested)
+  const generatePhoneNumber = () => {
+    const randomSuffix = Math.floor(Math.random() * 900) + 100; // 100-999
+    return `9836542${randomSuffix}`;
+  };
 
   const handleSubmitOffer = async () => {
     if (!offerData.offeredPrice || !offerData.eta) {
@@ -87,6 +95,11 @@ const RequestOfferCard = ({ request, onMakeOffer }) => {
     }
   };
 
+  const handleContactVendor = () => {
+    const phoneNumber = request.vendorPhone || generatePhoneNumber();
+    window.open(`tel:${phoneNumber}`, '_self');
+  };
+
   return (
     <Card className="bg-gradient-card border-border/50 shadow-card hover:shadow-glow transition-all duration-300">
       <CardHeader className="pb-3">
@@ -132,6 +145,33 @@ const RequestOfferCard = ({ request, onMakeOffer }) => {
             {request.description}
           </p>
         )}
+
+        {/* Contact Details Section */}
+        <div className="bg-muted/30 rounded-lg p-3 mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                <User className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-medium">{request.vendor}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Phone className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm font-mono">
+                  {request.vendorPhone || generatePhoneNumber()}
+                </span>
+              </div>
+            </div>
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={handleContactVendor}
+              className="h-8"
+            >
+              <Phone className="w-3 h-3 mr-1" />
+              Contact
+            </Button>
+          </div>
+        </div>
 
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div className="space-y-1">
