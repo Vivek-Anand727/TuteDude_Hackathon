@@ -23,11 +23,29 @@ app.use(helmet());
 
 // CORS configuration
 
+const allowedOrigins = [
+  'http://localhost:8080',
+  'https://sanchaykart.netlify.app'
+];
+const allowedOrigins = [
+  'http://localhost:8080',
+  'https://sanchaykart.netlify.app'
+];
+
 app.use(cors({
-    origin: 'http://localhost:8080'||'https://sanchaykart.netlify.app', // Allow all origins
-    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed methods
-    allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); // Allow tools like Postman
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error('CORS not allowed for this origin: ' + origin), false);
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Include OPTIONS!
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
+app.options('*', cors());
 
 // Rate limiting - Apply more selectively
 const limiter = rateLimit({
