@@ -23,7 +23,11 @@ app.use(helmet());
 
 // CORS configuration
 
-app.use(cors());
+app.use(cors({
+    origin: '*', // Allow all origins
+    methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed methods
+    allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
+}));
 
 // Rate limiting - Apply more selectively
 const limiter = rateLimit({
