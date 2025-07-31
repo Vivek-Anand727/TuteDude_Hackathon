@@ -1,0 +1,59 @@
+
+Tutedude's Web Dev Hackathon 1.0 Solution Submission
+Submit your Solution link here: 
+
+Submission Deadline : 27th July 2025 (@11:59pm)
+Note :  We will not accept submission after 11:59 pm
+
+Post Your work on LinkedIn and get 10 Extra points : 
+
+Share your hackathon work on LinkedIn—post a demo video, screenshots, or your final design. Tag your teammates and Tutedude (https://www.linkedin.com/company/tutedudeofficial/) so people see the teamwork behind it.
+
+This isn’t just for show. Posting your work can help you get noticed by employers or founders who might find your project valuable.
+
+Once done, add your LinkedIn post link to the Google form for submission.
+
+sumedhvats2004@gmail.com Switch account
+ 
+Draft saved
+* Indicates required question
+Email
+*
+Record sumedhvats2004@gmail.com as the email to be included with my response
+Team name (Ex : CodeWar) 
+*
+Team Shoonya
+Team members Name (Ex : Jay, Shiv, Karma)  
+*
+Sumedh Vats,Vivek Anand,Pooja
+Team members E-Mail ID (Ex : jay@gmail.com, shiv@gmail.com , Karma@gmail.com)
+*
+sumedhvats2004@gmail.com,vivek727sumo@gmail.com,pooja@gmail.com
+Team members WhatsApp Number (Ex : 988789887,0998890,66567688)
+*
+8920458448,7352648994,8607998317
+Record a video of your Solution with your team members and attach the link here (Mandatory : Make video Link Public)  
+*
+1. Explain all the features you have implemented with your team. 
+2. Include your team intro and team name
+3. Demo video should not exceed 5 minutes.
+4. No need to explain complete code in the video. 
+5. Upload video on drive and submit the public link here 
+6. You can use screen recording tools to record the solution. 
+7. Keep it crisp. Focus on showing how it works.
+8. Skip button-by-button walkthroughs.
+https://drive.google.com/file/d/174MPcEV_tt6UXjRtuCdNAIRh6IvVofGN/view?usp=sharing
+Add your Final Code (Github Link) Here : 
+*
+https://github.com/Vivek-Anand727/TuteDude_Hackathon
+Deployed link : (Vercel or Netlify link etc...)
+*
+https://sanchaykart.netlify.app/
+Post Your work on LinkedIn and get 10 Extra points (Submit yours LinkedIn post link here) 
+Share your hackathon work on LinkedIn—post a demo video, screenshots, or your final design. Tag your teammates and Tutedude (https://www.linkedin.com/company/tutedudeofficial/) so people see the teamwork behind it.
+This isn’t just for show. Posting your work can help you get noticed by employers or founders who might find your project valuable.
+Once done, add your LinkedIn post link to the Google form for submission.
+https://www.linkedin.com/posts/sumedh-vats_hackathon-webdevelopment-mongodb-activity-7355302853252431874-5q9-
+Any feedback or suggestions for Us ? 
+*
+Great

@@ -24,7 +24,7 @@ app.use(helmet());
 // CORS configuration
 
 app.use(cors({
-    origin: '*', // Allow all origins
+    origin: 'http://localhost:8080'||'https://sanchaykart.netlify.app', // Allow all origins
     methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allowed methods
     allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
 }));
