@@ -23,10 +23,7 @@ app.use(helmet());
 
 // CORS configuration
 
-const allowedOrigins = [
-  'http://localhost:8080',
-  'https://sanchaykart.netlify.app'
-];
+
 const allowedOrigins = [
   'http://localhost:8080',
   'https://sanchaykart.netlify.app'
