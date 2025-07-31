@@ -29,20 +29,24 @@ const allowedOrigins = [
   'https://sanchaykart.netlify.app'
 ];
 
-app.use(cors({
+// Move your CORS config to a variable
+const corsOptions = {
   origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // Allow tools like Postman
+    if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     } else {
       return callback(new Error('CORS not allowed for this origin: ' + origin), false);
     }
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Include OPTIONS!
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+};
 
-app.options('*', cors());
+// Use the same options for both
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
 
 // Rate limiting - Apply more selectively
 const limiter = rateLimit({

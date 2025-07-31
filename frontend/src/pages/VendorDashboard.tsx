@@ -64,7 +64,7 @@ const VendorDashboard = () => {
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      withCredentials: true,
+      withCredentials: false,
     };
   };
 
